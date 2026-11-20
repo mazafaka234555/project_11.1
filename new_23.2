@@ -1,0 +1,1051 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Behance Clone — Полная интерактивность</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    :root {
+      --bg-body: #ffffff;
+      --bg-header: #ffffff;
+      --bg-card: #ffffff;
+      --bg-hover: #f5f5f5;
+      --bg-input: #f3f3f3;
+      --text-main: #191919;
+      --text-muted: #6b6b6b;
+      --border-color: #e0e0e0;
+      --accent: #0057ff;
+      --accent-hover: #0045cc;
+      --shadow: 0 2px 10px rgba(0,0,0,0.05);
+      --card-shadow-hover: 0 10px 30px rgba(0,0,0,0.1);
+      --category-overlay: linear-gradient(90deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.1) 100%);
+      --logo-bg: none;
+      --logo-color: #191919;
+      --menu-bg: #ffffff;
+    }
+
+    body.dark-theme {
+      --bg-body: #0a0a0f;
+      --bg-header: rgba(10, 10, 15, 0.8);
+      --bg-card: rgba(20, 21, 28, 0.7);
+      --bg-hover: rgba(40, 42, 50, 0.8);
+      --bg-input: rgba(255, 255, 255, 0.05);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border-color: rgba(255, 255, 255, 0.1);
+      --accent: #3b82f6;
+      --accent-hover: #60a5fa;
+      --shadow: 0 4px 20px rgba(0,0,0,0.3);
+      --card-shadow-hover: 0 15px 35px rgba(0,0,0,0.6), 0 0 20px rgba(59, 130, 246, 0.2);
+      --category-overlay: linear-gradient(90deg, rgba(10,10,15,0.95) 0%, rgba(10,10,15,0.2) 100%);
+      --logo-bg: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+      --logo-color: transparent;
+      --menu-bg: #14151a;
+    }
+
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+    }
+
+    body {
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      min-height: 100vh;
+      background-image: radial-gradient(circle at 15% 50%, rgba(29, 78, 216, 0.08) 0%, transparent 50%), radial-gradient(circle at 85% 30%, rgba(147, 51, 234, 0.08) 0%, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    a { text-decoration: none; color: inherit; }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+    @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+    .project-card { animation: fadeIn 0.4s ease forwards; opacity: 0; transform: translateY(10px); }
+
+    /* HEADER */
+    .header {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--bg-header);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 16px 24px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+
+    .header-top { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+
+    /* Выпадающее меню фильтра */
+    .dropdown-wrapper { position: relative; }
+    
+    .filter-btn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 16px; border: 1px solid var(--border-color); border-radius: 24px;
+      font-size: 14px; font-weight: 600; color: var(--text-main);
+      transition: all 0.2s;
+    }
+    .filter-btn:hover, .filter-btn.active { background: var(--bg-hover); border-color: var(--text-main); }
+
+    .dropdown-menu {
+      position: absolute; top: 100%; left: 0; margin-top: 8px;
+      background: var(--menu-bg); border: 1px solid var(--border-color);
+      border-radius: 12px; box-shadow: var(--shadow); width: 250px; padding: 16px;
+      display: none; flex-direction: column; gap: 12px; z-index: 200;
+    }
+    .dropdown-menu.show { display: flex; animation: fadeIn 0.2s ease forwards; opacity: 1; transform: none; }
+    
+    .menu-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;}
+    .menu-option { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; padding: 6px 0; cursor: pointer;}
+    .menu-option:hover { color: var(--accent); }
+    .color-swatches { display: flex; gap: 8px; }
+    .swatch { width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
+    .swatch:hover, .swatch.active { border-color: var(--text-main); transform: scale(1.1); }
+
+    /* Логотип */
+    .logo {
+      font-size: 24px; font-weight: 700; letter-spacing: -0.5px;
+      cursor: pointer; display: flex; align-items: center;
+      background: var(--logo-bg); -webkit-background-clip: text; -webkit-text-fill-color: var(--logo-color); color: var(--logo-color);
+    }
+
+    /* Поиск */
+    .search-wrapper {
+      flex: 1; max-width: 800px; position: relative;
+      display: flex; align-items: center;
+      background: var(--bg-input); border-radius: 24px; padding: 4px;
+      border: 1px solid transparent; transition: all 0.2s;
+    }
+    .search-wrapper:focus-within { background: var(--bg-body); border-color: var(--text-main); }
+    .search-icon { position: absolute; left: 16px; width: 20px; height: 20px; fill: var(--text-muted); }
+    .search-input {
+      flex: 1; background: transparent; border: none;
+      padding: 12px 16px 12px 48px; font-size: 16px; color: var(--text-main); outline: none;
+    }
+    .search-input::placeholder { color: var(--text-muted); }
+
+    .search-tabs { display: flex; gap: 4px; margin-right: 8px; }
+    .search-tab {
+      padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500;
+      color: var(--text-muted); transition: all 0.2s; cursor: pointer;
+    }
+    .search-tab:hover { color: var(--text-main); }
+    .search-tab.active { background: var(--bg-body); color: var(--text-main); box-shadow: var(--shadow); border: 1px solid var(--border-color); }
+
+    .header-actions { display: flex; align-items: center; gap: 16px; position: relative; }
+
+    .theme-toggle {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg-input); color: var(--text-main); transition: all 0.3s;
+    }
+    .theme-toggle:hover { transform: scale(1.1) rotate(15deg); }
+    .theme-toggle svg { width: 20px; height: 20px; fill: currentColor; }
+
+    .btn-login { font-size: 14px; font-weight: 600; color: var(--text-main); padding: 8px 16px; }
+    .btn-signup {
+      background: var(--accent); color: #fff; font-size: 14px; font-weight: 600;
+      padding: 10px 20px; border-radius: 20px; transition: all 0.2s;
+    }
+    .btn-signup:hover { background: var(--accent-hover); box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); }
+
+    /* Профиль в хедере (если авторизован) */
+    .user-profile-btn {
+      display: none; align-items: center; gap: 8px; cursor: pointer;
+      padding: 4px 12px 4px 4px; border-radius: 24px; border: 1px solid var(--border-color); background: var(--bg-input);
+    }
+    .user-profile-btn img { width: 32px; height: 32px; border-radius: 50%; }
+    .user-profile-btn span { font-weight: 600; font-size: 14px; }
+    
+    .profile-menu {
+      position: absolute; top: 120%; right: 0; background: var(--menu-bg);
+      border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow);
+      width: 200px; padding: 8px; display: none; flex-direction: column; z-index: 200;
+    }
+    .profile-menu.show { display: flex; animation: fadeIn 0.2s ease forwards; opacity: 1; transform: none; }
+    .profile-menu a { padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
+    .profile-menu a:hover { background: var(--bg-hover); color: var(--accent); }
+
+    /* КАТЕГОРИИ */
+    .categories-row { display: flex; gap: 12px; overflow-x: auto; padding: 16px 24px; scrollbar-width: none; }
+    .categories-row::-webkit-scrollbar { display: none; }
+
+    .category-card {
+      position: relative; min-width: 200px; height: 64px; border-radius: 8px; overflow: hidden;
+      display: flex; align-items: center; padding: 0 20px; cursor: pointer; background-color: #222;
+      transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .category-card:hover { transform: translateY(-3px); box-shadow: var(--card-shadow-hover); }
+    .category-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.4; z-index: 1; transition: opacity 0.3s; }
+    .category-card:hover img { opacity: 0.6; }
+    .category-card::after { content: ''; position: absolute; inset: 0; background: var(--category-overlay); z-index: 2; }
+    .category-card span { position: relative; z-index: 3; color: #fff; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+    .category-card.active { border: 2px solid var(--accent); box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
+
+    /* СЕТКА */
+    .main-content { padding: 24px; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; font-size: 14px; color: var(--text-muted); font-weight: 500; }
+    .sort-btn { font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .sort-btn:hover { color: var(--text-main); }
+
+    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+
+    /* КАРТОЧКА */
+    .project-card {
+      cursor: pointer; display: flex; flex-direction: column; gap: 12px;
+      background: var(--bg-card); border-radius: 8px; padding: 12px; border: 1px solid transparent;
+      transition: all 0.3s ease; position: relative;
+    }
+    body.dark-theme .project-card { border-color: var(--border-color); backdrop-filter: blur(10px); }
+    .project-card:hover { transform: translateY(-4px); box-shadow: var(--card-shadow-hover); }
+
+    .card-image-wrapper { position: relative; width: 100%; aspect-ratio: 4/3; background: var(--bg-input); overflow: hidden; border-radius: 4px; }
+    .card-image { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+    .project-card:hover .card-image { transform: scale(1.05); }
+
+    .hover-like {
+      position: absolute; top: 12px; right: 12px; width: 36px; height: 36px;
+      background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      opacity: 0; transform: translateY(-10px); transition: all 0.3s; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .project-card:hover .hover-like { opacity: 1; transform: translateY(0); }
+    .hover-like:hover { background: #fff; transform: scale(1.1) !important; }
+    .hover-like svg { width: 18px; height: 18px; fill: #191919; transition: fill 0.2s; }
+    .hover-like.liked svg { fill: var(--accent); }
+
+    /* Кнопка удаления для админа */
+    .admin-delete-btn {
+      position: absolute; top: 12px; left: 12px; background: rgba(217, 48, 37, 0.9);
+      color: white; width: 32px; height: 32px; border-radius: 50%; display: none;
+      align-items: center; justify-content: center; z-index: 10; border: none; transition: transform 0.2s;
+    }
+    .admin-delete-btn:hover { transform: scale(1.1); }
+    .admin-delete-btn svg { width: 16px; height: 16px; fill: white; }
+    body.is-admin .admin-delete-btn { display: flex; }
+
+    .card-info { display: flex; flex-direction: column; gap: 6px; }
+    .info-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .project-title { font-size: 15px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+    .project-stats { display: flex; gap: 12px; font-size: 13px; color: var(--text-muted); font-weight: 500; }
+    .stat { display: flex; align-items: center; gap: 4px; }
+    .stat svg { width: 14px; height: 14px; fill: currentColor; }
+
+    .author-name { font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; transition: color 0.2s; cursor: pointer; }
+    .author-name:hover { color: var(--text-main); text-decoration: underline; }
+    .pro-badge { background: rgba(59, 130, 246, 0.15); color: var(--accent); font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+
+    /* МОДАЛКИ */
+    .modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;
+      z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; padding: 24px; backdrop-filter: blur(5px);
+    }
+    .modal.active { opacity: 1; pointer-events: auto; }
+    .modal-content {
+      background: var(--bg-body); width: 100%; max-width: 1000px; max-height: 90vh; overflow-y: auto;
+      border-radius: 12px; position: relative; transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3); border: 1px solid var(--border-color);
+    }
+    .modal.active .modal-content { transform: scale(1); }
+    .modal-close {
+      position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; background: var(--bg-body); color: var(--text-main);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: var(--shadow); z-index: 10; transition: all 0.2s;
+    }
+    .modal-close:hover { background: var(--bg-hover); transform: rotate(90deg); }
+
+    .modal-image { width: 100%; max-height: 60vh; object-fit: contain; background: var(--bg-input); }
+    .modal-body { padding: 32px; }
+    .modal-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; color: var(--text-main); }
+    .modal-author { font-size: 15px; color: var(--text-muted); margin-bottom: 24px; cursor: pointer; display: inline-block; }
+    .modal-author:hover { text-decoration: underline; color: var(--accent); }
+
+    /* Кнопки админа в модалке */
+    .admin-modal-actions { display: none; gap: 12px; margin-top: 16px; }
+    body.is-admin .admin-modal-actions { display: flex; }
+    .btn-edit { background: var(--bg-input); color: var(--text-main); padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 14px; border: 1px solid var(--border-color); }
+    .btn-edit:hover { background: var(--bg-hover); }
+    .btn-delete { background: #d93025; color: white; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 14px; }
+    .btn-delete:hover { background: #b7271e; }
+
+    /* Комментарии */
+    .comments-section { border-top: 1px solid var(--border-color); padding-top: 24px; margin-top: 24px; }
+    .comment { display: flex; gap: 12px; margin-bottom: 16px; }
+    .comment-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--border-color); }
+    .comment-text { background: var(--bg-input); padding: 12px 16px; border-radius: 8px; font-size: 14px; color: var(--text-main); flex: 1; }
+    .comment-input-wrapper { display: flex; gap: 12px; margin-top: 16px; }
+    .comment-input { flex: 1; border: 1px solid var(--border-color); background: var(--bg-input); padding: 12px 16px; border-radius: 24px; outline: none; font-size: 14px; color: var(--text-main); transition: border 0.2s;}
+    .comment-input:focus { border-color: var(--accent); }
+    .btn-send { background: var(--accent); color: #fff; border-radius: 24px; padding: 0 24px; font-weight: 600; transition: background 0.2s;}
+    .btn-send:hover { background: var(--accent-hover); }
+
+    /* Админ FAB */
+    .admin-fab {
+      position: fixed; bottom: 24px; right: 24px; width: 50px; height: 50px; background: var(--text-main); color: var(--bg-body);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 90; transition: transform 0.2s;
+    }
+    .admin-fab:hover { transform: scale(1.1); }
+    .admin-fab svg { width: 24px; height: 24px; fill: var(--bg-body); }
+
+    /* Формы */
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid var(--border-color); background: var(--bg-input); border-radius: 8px; font-size: 14px; outline: none; color: var(--text-main); transition: border 0.2s; resize: vertical; }
+    .form-group input:focus, .form-group textarea:focus { border-color: var(--accent); }
+    
+    .btn-primary { background: var(--accent); color: #fff; padding: 12px; border-radius: 8px; font-weight: 600; width: 100%; transition: all 0.2s; }
+    .btn-primary:hover { background: var(--accent-hover); box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); }
+
+    .auth-switch { margin-top: 16px; font-size: 14px; color: var(--text-muted); cursor: pointer; }
+    .auth-switch span { color: var(--accent); font-weight: 600; }
+    .auth-switch:hover span { text-decoration: underline; }
+
+    /* Тосты */
+    .toast-container { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+    .toast { background: var(--text-main); color: var(--bg-body); padding: 12px 24px; border-radius: 8px; font-size: 14px; animation: slideUp 0.3s ease; font-weight: 500;}
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    @media (max-width: 768px) {
+      .header-top { flex-wrap: wrap; }
+      .search-tabs { display: none; }
+      .header-actions .btn-login { display: none; }
+      .gallery { grid-template-columns: 1fr; }
+      .modal-image { max-height: 40vh; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ШАПКА -->
+  <header class="header">
+    <div class="header-top">
+      
+      <!-- Кнопка Фильтр с выпадающим меню -->
+      <div class="dropdown-wrapper">
+        <button class="filter-btn" id="filterBtn" onclick="toggleFilterMenu()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+          Фильтр
+        </button>
+        <div class="dropdown-menu" id="filterMenu">
+          <div class="menu-title">Сортировка</div>
+          <label class="menu-option"><input type="radio" name="sort" checked onchange="sortBy('recommended')"> Рекомендуемые</label>
+          <label class="menu-option"><input type="radio" name="sort" onchange="sortBy('popular')"> Самые популярные</label>
+          <label class="menu-option"><input type="radio" name="sort" onchange="sortBy('newest')"> Новые</label>
+          
+          <div class="menu-title" style="margin-top: 12px;">Цвет</div>
+          <div class="color-swatches">
+            <div class="swatch active" style="background:#ff0000" onclick="filterColor('red', this)"></div>
+            <div class="swatch" style="background:#0000ff" onclick="filterColor('blue', this)"></div>
+            <div class="swatch" style="background:#00ff00" onclick="filterColor('green', this)"></div>
+            <div class="swatch" style="background:#ffff00" onclick="filterColor('yellow', this)"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="logo" onclick="window.scrollTo(0,0)">Behance</div>
+
+      <div class="search-wrapper">
+        <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <input type="text" id="searchInput" class="search-input" placeholder="Поиск...">
+        <div class="search-tabs">
+          <button class="search-tab active" onclick="setSearchTab('projects', this)">Проекты</button>
+          <button class="search-tab" onclick="setSearchTab('people', this)">Люди</button>
+          <button class="search-tab" onclick="setSearchTab('resources', this)">Ресурсы</button>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="theme-toggle" id="themeToggle" title="Сменить тему" onclick="toggleTheme()">
+          <svg id="themeIcon" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+        </button>
+        
+        <!-- Кнопки гостя -->
+        <button class="btn-login" id="btnLogin" onclick="openModal('userModal')">Войти</button>
+        <button class="btn-signup" id="btnSignup" onclick="openModal('userModal')">Создать аккаунт</button>
+        
+        <!-- Профиль пользователя (скрыт по умолчанию) -->
+        <div class="user-profile-btn" id="userProfileBtn" onclick="toggleProfileMenu(event)">
+          <img src="https://i.pravatar.cc/150?u=user" alt="User">
+          <span>Мой профиль</span>
+          <div class="profile-menu" id="profileMenu">
+            <a onclick="showToast('Переход в профиль')">Мой профиль</a>
+            <a onclick="showToast('Настройки')">Настройки</a>
+            <a onclick="logout()">Выйти</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- КАТЕГОРИИ -->
+  <div class="categories-row" id="filters">
+    <div class="category-card active" data-category="all"><img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400&auto=format&fit=crop" alt="For You"><span>★ Для вас</span></div>
+    <div class="category-card" data-category="Following"><img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=400&auto=format&fit=crop" alt="Following"><span>♥ Подписки</span></div>
+    <div class="category-card" data-category="Graphic Design"><img src="https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=400&auto=format&fit=crop" alt="Graphic"><span>Графический дизайн</span></div>
+    <div class="category-card" data-category="Photography"><img src="https://images.unsplash.com/photo-1542038784456-1ea8e935640e?q=80&w=400&auto=format&fit=crop" alt="Photo"><span>Фотография</span></div>
+    <div class="category-card" data-category="Illustration"><img src="https://images.unsplash.com/photo-1580136579312-94651dfd596d?q=80&w=400&auto=format&fit=crop" alt="Illustration"><span>Иллюстрация</span></div>
+    <div class="category-card" data-category="3D"><img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400&auto=format&fit=crop" alt="3D"><span>3D Art</span></div>
+    <div class="category-card" data-category="UI/UX"><img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=400&auto=format&fit=crop" alt="UI/UX"><span>UI/UX</span></div>
+  </div>
+
+  <!-- ОСНОВНОЙ КОНТЕНТ -->
+  <main class="main-content">
+    <div class="top-bar">
+      <span id="pageTitle">Рекомендуемые проекты</span>
+      <span class="sort-btn" onclick="toggleFilterMenu()">Сортировка ▼</span>
+    </div>
+    <div class="gallery" id="gallery"></div>
+  </main>
+
+  <!-- МОДАЛКА ПРОЕКТА -->
+  <div class="modal" id="projectModal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal('projectModal')">✕</button>
+      <img class="modal-image" id="modalImg" src="" alt="">
+      <div class="modal-body">
+        <h2 class="modal-title" id="modalTitle">Название</h2>
+        <p class="modal-author" id="modalAuthor" onclick="openAuthorProfile()">Автор</p>
+        
+        <!-- Кнопки редактирования для админа -->
+        <div class="admin-modal-actions">
+          <button class="btn-edit" onclick="editProject()">✎ Редактировать</button>
+          <button class="btn-delete" onclick="deleteProjectFromModal()">🗑 Удалить</button>
+        </div>
+        
+        <div class="comments-section">
+          <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--text-main);">Комментарии</h3>
+          <div id="commentsList"></div>
+          <div class="comment-input-wrapper">
+            <input type="text" class="comment-input" id="commentInput" placeholder="Добавить комментарий..." onkeypress="if(event.key === 'Enter') addComment()">
+            <button class="btn-send" onclick="addComment()">Отправить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛКА ПРОФИЛЯ АВТОРА -->
+  <div class="modal" id="authorModal">
+    <div class="modal-content" style="max-width: 800px;">
+      <button class="modal-close" onclick="closeModal('authorModal')">✕</button>
+      <div style="padding: 40px; display: flex; gap: 24px; align-items: center; border-bottom: 1px solid var(--border-color);">
+        <img id="authorAvatar" src="" style="width: 100px; height: 100px; border-radius: 50%; border: 4px solid var(--border-color);">
+        <div>
+          <h2 id="authorName" style="font-size: 28px; font-weight: 700; margin-bottom: 4px;">Имя</h2>
+          <p style="color: var(--text-muted); font-size: 16px;">Графический дизайнер</p>
+          <button class="btn-signup" style="margin-top: 12px; padding: 8px 16px; font-size: 13px;">Подписаться</button>
+        </div>
+      </div>
+      <div style="padding: 24px;">
+        <h3 style="margin-bottom: 16px;">Проекты автора</h3>
+        <div class="gallery" id="authorGallery" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛКА АВТОРИЗАЦИИ -->
+  <div class="modal" id="userModal">
+    <div class="modal-content" style="max-width: 400px; padding: 40px; text-align: center;">
+      <button class="modal-close" onclick="closeModal('userModal')">✕</button>
+      <h2 id="authTitle" style="margin-bottom: 24px; font-size: 24px;">Вход в аккаунт</h2>
+      
+      <div id="authFields">
+        <div class="form-group"><input type="email" placeholder="Email"></div>
+        <div class="form-group"><input type="password" placeholder="Пароль"></div>
+        <div class="form-group" id="confirmPassGroup" style="display: none;"><input type="password" placeholder="Повторите пароль"></div>
+      </div>
+      
+      <button class="btn-primary" onclick="performAuth()" id="authSubmitBtn">Войти</button>
+      <p class="auth-switch" onclick="toggleAuthMode()">
+        <span id="authSwitchText">Нет аккаунта? Зарегистрироваться</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- АДМИН МОДАЛКИ (ДОБАВЛЕНИЕ/РЕДАКТИРОВАНИЕ) -->
+  <div class="modal" id="adminModal">
+    <div class="modal-content" style="max-width: 500px; padding: 32px;">
+      <button class="modal-close" onclick="closeModal('adminModal')">✕</button>
+      <h2 id="adminModalTitle" style="margin-bottom: 24px; font-size: 24px;">Добавить проект</h2>
+      
+      <input type="hidden" id="editProjectId">
+      
+      <div class="form-group">
+        <label>Название</label>
+        <input type="text" id="newTitle" placeholder="Название проекта">
+      </div>
+      <div class="form-group">
+        <label>Автор</label>
+        <input type="text" id="newAuthor" placeholder="Имя автора">
+      </div>
+      <div class="form-group">
+        <label>Категория</label>
+        <select id="newCategory">
+          <option value="Graphic Design">Графический дизайн</option>
+          <option value="Illustration">Иллюстрация</option>
+          <option value="Photography">Фотография</option>
+          <option value="UI/UX">UI/UX</option>
+          <option value="Motion">Моушн</option>
+          <option value="3D">3D-графика</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Ссылка на картинку (URL)</label>
+        <input type="text" id="newImage" placeholder="https://...">
+      </div>
+      
+      <!-- Скрытая форма для админа -->
+      <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 16px; display: none;" id="adminPassGroup">
+        <label style="color: #d93025;">Пароль администратора (admin123)</label>
+        <input type="password" id="adminPassword" placeholder="Введите пароль">
+      </div>
+      
+      <button class="btn-primary" onclick="saveProject()" id="saveBtn">Опубликовать</button>
+    </div>
+  </div>
+
+  <!-- АДМИН FAB -->
+  <button class="admin-fab" id="adminFab" onclick="openAdminPanel()" title="Админ">
+    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+  </button>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+    // ==========================================
+    // СОСТОЯНИЕ ПРИЛОЖЕНИЯ
+    // ==========================================
+    let allProjects = [
+      { id: 1, title: "Jack and Jill", author: "Неск. владельцев", category: "3D", likes: 203, views: "2.4K", img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop", liked: false, comments: ["Крутые персонажи!"] },
+      { id: 2, title: "BudaXD characters and stickers", author: "Konrad Kirpluk", category: "Illustration", likes: 108, views: "1.4K", img: "https://images.unsplash.com/photo-1561070791-2526d30994b5?q=80&w=800&auto=format&fit=crop", liked: false, comments: [] },
+      { id: 3, title: "Behance Pro Promo", author: "Behance", category: "UI/UX", likes: 0, views: "0", img: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=800&auto=format&fit=crop", liked: false, comments: [] },
+      { id: 4, title: "BETHESDA MKT", author: "Chantal Jemmott", category: "Graphic Design", likes: 297, views: "5.6K", img: "https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=800&auto=format&fit=crop", liked: false, comments: [] },
+      { id: 5, title: "CAMPAIGN 'PASSENGERS'", author: "Kamilla Nanapova", category: "Photography", likes: 51, views: 243, img: "https://images.unsplash.com/photo-1542038784456-1ea8e935640e?q=80&w=800&auto=format&fit=crop", liked: false, comments: [] },
+      { id: 6, title: "Ночной город", author: "Иван С.", category: "Illustration", likes: 120, views: "3K", img: "https://images.unsplash.com/photo-1580136579312-94651dfd596d?q=80&w=800&auto=format&fit=crop", liked: false, comments: [] },
+      { id: 7, title: "ORION Branding", author: "Студия Норт", category: "Graphic Design", likes: 450, views: "10K", img: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=800&auto=format&fit=crop", liked: false, comments: [] },
+      { id: 8, title: "Упаковка чая", author: "Анна К.", category: "Graphic Design", likes: 320, views: "8K", img: "https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?q=80&w=800&auto=format&fit=crop", liked: false, comments: [] },
+      { id: 9, title: "Подводный мир", author: "Елена В.", category: "3D", likes: 890, views: "22K", img: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=800&auto=format&fit=crop", liked: false, comments: [] },
+      { id: 10, title: "Ботаника (Ч/Б)", author: "Марк С.", category: "Photography", likes: 150, views: "4K", img: "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=800&auto=format&fit=crop", liked: false, comments: [] },
+      { id: 11, title: "App для фитнеса", author: "UI Мастера", category: "UI/UX", likes: 210, views: "6K", img: "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?q=80&w=800&auto=format&fit=crop", liked: false, comments: [] },
+      { id: 12, title: "Моушн реклама", author: "Креатив Моушн", category: "Motion", likes: 540, views: "15K", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop", liked: false, comments: [] }
+    ];
+
+    let state = {
+      category: 'all',
+      searchQuery: '',
+      activeTab: 'projects',
+      sortBy: 'recommended',
+      activeProjectId: null,
+      activeAuthor: null,
+      isAdmin: false,
+      isLoggedIn: false,
+      authMode: 'login',
+      // Массив для хранения подписок. Берем из localStorage или создаем пустой.
+      subscriptions: JSON.parse(localStorage.getItem('subscriptions')) || []
+    };
+
+    const gallery = document.getElementById('gallery');
+    const searchInput = document.getElementById('searchInput');
+    const pageTitle = document.getElementById('pageTitle');
+    const authorGallery = document.getElementById('authorGallery');
+
+    // ==========================================
+    // ИНИЦИАЛИЗАЦИЯ
+    // ==========================================
+    function init() {
+      if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark-theme');
+        updateThemeIcon(true);
+      }
+      
+      if (localStorage.getItem('isAdmin') === 'true') {
+        state.isAdmin = true;
+        document.body.classList.add('is-admin');
+        document.getElementById('adminFab').style.display = 'flex';
+      }
+
+      renderGallery();
+    }
+
+    // ==========================================
+    // ЛОГИКА РЕНДЕРА
+    // ==========================================
+    function renderGallery() {
+      gallery.innerHTML = '';
+      
+      if (state.activeTab === 'people') {
+        renderPeopleTab();
+        return;
+      }
+
+      let filtered = allProjects.filter(p => {
+        // Логика для вкладки "Подписки"
+        if (state.category === 'Following') {
+          if (!state.subscriptions.includes(p.author)) return false;
+        } else if (state.category !== 'all') {
+          if (p.category !== state.category) return false;
+        }
+        
+        const matchSearch = p.title.toLowerCase().includes(state.searchQuery.toLowerCase()) || 
+                            p.author.toLowerCase().includes(state.searchQuery.toLowerCase());
+        return matchSearch;
+      });
+
+      if (state.sortBy === 'popular') filtered.sort((a, b) => b.likes - a.likes);
+      if (state.sortBy === 'newest') filtered.sort((a, b) => b.id - a.id);
+
+      if (filtered.length === 0) {
+        gallery.innerHTML = `<div style="color: var(--text-muted); text-align: center; padding: 60px; grid-column: 1/-1;">
+          <h2>Здесь пока пусто</h2>
+          <p>${state.category === 'Following' ? 'Вы еще ни на кого не подписались.' : 'Попробуйте изменить запрос.'}</p>
+        </div>`;
+        return;
+      }
+
+      filtered.forEach((project, index) => {
+        const card = document.createElement('article');
+        card.className = 'project-card';
+        card.style.animationDelay = `${index * 0.03}s`;
+        
+        card.onclick = (e) => {
+          if (!e.target.closest('.hover-like') && !e.target.closest('.admin-delete-btn') && !e.target.closest('.author-name')) {
+            openProjectModal(project.id);
+          }
+        };
+
+        card.innerHTML = `
+          ${state.isAdmin ? `<button class="admin-delete-btn" onclick="deleteProject(${project.id}, event)"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>` : ''}
+          <div class="card-image-wrapper">
+            <img class="card-image" src="${project.img}" alt="${project.title}" loading="lazy">
+            <div class="hover-like ${project.liked ? 'liked' : ''}" onclick="toggleLike(${project.id}, event)">
+              <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="info-top">
+              <div class="project-title" title="${project.title}">${project.title}</div>
+              <div class="project-stats">
+                <div class="stat">
+                  <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+                  ${project.likes}
+                </div>
+                <div class="stat">
+                  <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                  ${project.views}
+                </div>
+              </div>
+            </div>
+            <div class="author-name" onclick="openAuthorProfile('${project.author}', event)">
+              ${project.author} ${project.author === 'Неск. владельцев' ? '<span class="pro-badge">PRO</span>' : ''}
+            </div>
+          </div>
+        `;
+        gallery.appendChild(card);
+      });
+    }
+
+    function renderPeopleTab() {
+      const authors = [...new Set(allProjects.map(p => p.author))];
+      gallery.innerHTML = '';
+      
+      authors.forEach(author => {
+        const isSubscribed = state.subscriptions.includes(author);
+        const card = document.createElement('div');
+        card.className = 'project-card';
+        card.style.alignItems = 'center';
+        card.style.textAlign = 'center';
+        card.style.padding = '32px';
+        
+        card.innerHTML = `
+          <img src="https://i.pravatar.cc/150?u=${author}" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 16px; border: 3px solid var(--border-color);">
+          <h3 style="font-size: 18px; font-weight: 700;">${author}</h3>
+          <p style="color: var(--text-muted); font-size: 14px;">Дизайнер</p>
+          <button class="${isSubscribed ? 'btn-login' : 'btn-signup'}" 
+                  style="margin-top: 16px; width: 100%; border: 1px solid var(--border-color);" 
+                  onclick="event.stopPropagation(); toggleSubscription('${author}', this)">
+            ${isSubscribed ? 'Отписаться' : 'Подписаться'}
+          </button>
+        `;
+        card.onclick = () => openAuthorProfile(author);
+        gallery.appendChild(card);
+      });
+    }
+
+    // ==========================================
+    // ПОДПИСКИ (НОВАЯ ЛОГИКА)
+    // ==========================================
+    function toggleSubscription(author, btnElement) {
+      if (state.subscriptions.includes(author)) {
+        // Отписываемся
+        state.subscriptions = state.subscriptions.filter(name => name !== author);
+        showToast(`Вы отписались от ${author}`);
+      } else {
+        // Подписываемся
+        state.subscriptions.push(author);
+        showToast(`Вы подписались на ${author}`);
+      }
+
+      // Сохраняем в память браузера
+      localStorage.setItem('subscriptions', JSON.stringify(state.subscriptions));
+
+      // Если мы в модалке профиля, обновляем кнопку там
+      const profileBtn = document.querySelector('#authorModal button.btn-signup, #authorModal button.btn-login');
+      if (profileBtn && state.activeAuthor === author) {
+        updateProfileModalBtn(author);
+      }
+
+      // Перерисовываем галерею и вкладку Люди, чтобы обновить состояние кнопок
+      renderGallery();
+    }
+
+    function updateProfileModalBtn(author) {
+      const btn = document.getElementById('authorSubBtn');
+      if (!btn) return;
+      
+      const isSubbed = state.subscriptions.includes(author);
+      if (isSubbed) {
+        btn.className = 'btn-login';
+        btn.textContent = 'Отписаться';
+        btn.style.border = '1px solid var(--border-color)';
+      } else {
+        btn.className = 'btn-signup';
+        btn.textContent = 'Подписаться';
+        btn.style.border = 'none';
+      }
+    }
+
+    // ==========================================
+    // ДЕЙСТВИЯ С ПРОЕКТАМИ
+    // ==========================================
+    function toggleLike(id, event) {
+      event.stopPropagation();
+      const project = allProjects.find(p => p.id === id);
+      if (project) {
+        project.liked = !project.liked;
+        project.likes += project.liked ? 1 : -1;
+        renderGallery();
+        if (project.liked) showToast('Добавлено в избранное ❤️');
+      }
+    }
+
+    function openProjectModal(id) {
+      const p = allProjects.find(x => x.id === id);
+      state.activeProjectId = id;
+      
+      document.getElementById('modalImg').src = p.img;
+      document.getElementById('modalTitle').textContent = p.title;
+      document.getElementById('modalAuthor').textContent = `Автор: ${p.author}`;
+      
+      renderComments(p.comments);
+      openModal('projectModal');
+    }
+
+    function deleteProject(id, event) {
+      event.stopPropagation();
+      if (!state.isAdmin) return;
+      allProjects = allProjects.filter(p => p.id !== id);
+      renderGallery();
+      showToast('Проект удален');
+    }
+
+    function deleteProjectFromModal() {
+      if (!state.isAdmin) return;
+      allProjects = allProjects.filter(p => p.id !== state.activeProjectId);
+      closeModal('projectModal');
+      renderGallery();
+      showToast('Проект удален');
+    }
+
+    function editProject() {
+      if (!state.isAdmin) return;
+      const p = allProjects.find(x => x.id === state.activeProjectId);
+      if (!p) return;
+
+      document.getElementById('adminModalTitle').textContent = 'Редактировать проект';
+      document.getElementById('editProjectId').value = p.id;
+      document.getElementById('newTitle').value = p.title;
+      document.getElementById('newAuthor').value = p.author;
+      document.getElementById('newCategory').value = p.category;
+      document.getElementById('newImage').value = p.img;
+      
+      document.getElementById('adminPassGroup').style.display = 'none';
+      
+      closeModal('projectModal');
+      openModal('adminModal');
+    }
+
+    function saveProject() {
+      const id = document.getElementById('editProjectId').value;
+      const title = document.getElementById('newTitle').value.trim();
+      const author = document.getElementById('newAuthor').value.trim();
+      const category = document.getElementById('newCategory').value;
+      const img = document.getElementById('newImage').value.trim() || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop';
+
+      if (!title || !author) return showToast('Заполните все поля', true);
+
+      if (id) {
+        const p = allProjects.find(x => x.id == id);
+        p.title = title; p.author = author; p.category = category; p.img = img;
+        showToast('Проект обновлен ✏️');
+      } else {
+        if (!state.isAdmin) {
+          const pass = document.getElementById('adminPassword').value;
+          if (pass !== 'admin123') return showToast('Неверный пароль', true);
+          
+          state.isAdmin = true;
+          localStorage.setItem('isAdmin', 'true');
+          document.body.classList.add('is-admin');
+        }
+        
+        const newProject = { id: Date.now(), title, author, category, img, likes: 0, views: "0", liked: false, comments: [] };
+        allProjects.unshift(newProject);
+        showToast('Проект добавлен 🎉');
+      }
+
+      closeModal('adminModal');
+      renderGallery();
+      resetAdminForm();
+    }
+
+    function openAdminPanel() {
+      if (state.isAdmin) {
+        resetAdminForm();
+        document.getElementById('adminModalTitle').textContent = 'Добавить проект';
+        document.getElementById('adminPassGroup').style.display = 'none';
+        openModal('adminModal');
+      } else {
+        resetAdminForm();
+        document.getElementById('adminModalTitle').textContent = 'Вход в админку';
+        document.getElementById('adminPassGroup').style.display = 'block';
+        openModal('adminModal');
+      }
+    }
+
+    function resetAdminForm() {
+      document.getElementById('editProjectId').value = '';
+      document.getElementById('newTitle').value = '';
+      document.getElementById('newAuthor').value = '';
+      document.getElementById('newImage').value = '';
+      document.getElementById('adminPassword').value = '';
+    }
+
+    // ==========================================
+    // ПРОФИЛИ АВТОРОВ
+    // ==========================================
+    function openAuthorProfile(authorName, event) {
+      if(event) event.stopPropagation();
+      
+      const name = typeof authorName === 'string' && event ? authorName : allProjects.find(p => p.id === state.activeProjectId).author;
+      state.activeAuthor = name;
+
+      document.getElementById('authorName').textContent = name;
+      document.getElementById('authorAvatar').src = `https://i.pravatar.cc/150?u=${name}`;
+      
+      // Обновляем кнопку подписки в профиле
+      const isSubbed = state.subscriptions.includes(name);
+      const subBtn = document.getElementById('authorSubBtn');
+      if (isSubbed) {
+        subBtn.className = 'btn-login';
+        subBtn.textContent = 'Отписаться';
+        subBtn.style.border = '1px solid var(--border-color)';
+      } else {
+        subBtn.className = 'btn-signup';
+        subBtn.textContent = 'Подписаться';
+        subBtn.style.border = 'none';
+      }
+      
+      const projects = allProjects.filter(p => p.author === name);
+      authorGallery.innerHTML = projects.map(p => `
+        <div style="cursor:pointer;" onclick="closeModal('authorModal'); openProjectModal(${p.id})">
+          <img src="${p.img}" style="width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:8px; margin-bottom:8px;">
+          <div style="font-size:14px; font-weight:600;">${p.title}</div>
+        </div>
+      `).join('');
+
+      closeModal('projectModal');
+      openModal('authorModal');
+    }
+
+    // ==========================================
+    // АВТОРИЗАЦИЯ И МЕНЮ
+    // ==========================================
+    function performAuth() {
+      if (state.authMode === 'login') {
+        state.isLoggedIn = true;
+        closeModal('userModal');
+        
+        document.getElementById('btnLogin').style.display = 'none';
+        document.getElementById('btnSignup').style.display = 'none';
+        document.getElementById('userProfileBtn').style.display = 'flex';
+        
+        showToast('Вы успешно вошли! 👋');
+      } else {
+        showToast('Аккаунт создан! Добро пожаловать!');
+        toggleAuthMode();
+      }
+    }
+
+    function toggleAuthMode() {
+      state.authMode = state.authMode === 'login' ? 'register' : 'login';
+      
+      const title = document.getElementById('authTitle');
+      const btn = document.getElementById('authSubmitBtn');
+      const switchText = document.getElementById('authSwitchText');
+      const confirmGroup = document.getElementById('confirmPassGroup');
+
+      if (state.authMode === 'login') {
+        title.textContent = 'Вход в аккаунт';
+        btn.textContent = 'Войти';
+        switchText.textContent = 'Нет аккаунта? Зарегистрироваться';
+        confirmGroup.style.display = 'none';
+      } else {
+        title.textContent = 'Создание аккаунта';
+        btn.textContent = 'Зарегистрироваться';
+        switchText.textContent = 'Уже есть аккаунт? Войти';
+        confirmGroup.style.display = 'block';
+      }
+    }
+
+    function toggleProfileMenu(e) {
+      e.stopPropagation();
+      document.getElementById('profileMenu').classList.toggle('show');
+    }
+
+    function logout() {
+      state.isLoggedIn = false;
+      document.getElementById('btnLogin').style.display = 'block';
+      document.getElementById('btnSignup').style.display = 'block';
+      document.getElementById('userProfileBtn').style.display = 'none';
+      document.getElementById('profileMenu').classList.remove('show');
+      showToast('Вы вышли из аккаунта');
+    }
+
+    // ==========================================
+    // ФИЛЬТРЫ И ВКЛАДКИ
+    // ==========================================
+    function toggleFilterMenu() {
+      document.getElementById('filterMenu').classList.toggle('show');
+    }
+
+    function setSearchTab(tab, btn) {
+      document.querySelectorAll('.search-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      state.activeTab = tab;
+      
+      if (tab === 'people') pageTitle.textContent = 'Люди';
+      else if (tab === 'resources') {
+        pageTitle.textContent = 'Ресурсы';
+        gallery.innerHTML = '<div style="text-align:center; padding:60px; grid-column:1/-1; color:var(--text-muted);"><h2>Библиотека ресурсов скоро появится 🚧</h2></div>';
+        return;
+      }
+      else pageTitle.textContent = 'Рекомендуемые проекты';
+      
+      renderGallery();
+    }
+
+    function sortBy(type) {
+      state.sortBy = type;
+      document.getElementById('filterMenu').classList.remove('show');
+      renderGallery();
+    }
+
+    function filterColor(color, el) {
+      document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+      el.classList.add('active');
+      showToast('Фильтр по цвету применен');
+      document.getElementById('filterMenu').classList.remove('show');
+    }
+
+    searchInput.addEventListener('input', (e) => {
+      state.searchQuery = e.target.value;
+      if (state.activeTab !== 'people') renderGallery();
+    });
+
+    document.getElementById('filters').addEventListener('click', (e) => {
+      const card = e.target.closest('.category-card');
+      if (card) {
+        document.querySelectorAll('.category-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        state.category = card.dataset.category;
+        pageTitle.textContent = card.querySelector('span').textContent.replace('★ ', '').replace('♥ ', '');
+        renderGallery();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.dropdown-wrapper')) {
+        document.getElementById('filterMenu').classList.remove('show');
+      }
+      if (!e.target.closest('.user-profile-btn')) {
+        document.getElementById('profileMenu').classList.remove('show');
+      }
+    });
+
+    // ==========================================
+    // УТИЛИТЫ
+    // ==========================================
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal(modal.id);
+      });
+    });
+
+    function renderComments(comments) {
+      const list = document.getElementById('commentsList');
+      list.innerHTML = comments.length ? '' : '<p style="color: var(--text-muted); font-size: 14px; margin-bottom: 16px;">Нет комментариев.</p>';
+      
+      comments.forEach(comment => {
+        const div = document.createElement('div');
+        div.className = 'comment';
+        div.innerHTML = `<img class="comment-avatar" src="https://i.pravatar.cc/150?u=${Math.random()}" alt="User"><div class="comment-text">${comment}</div>`;
+        list.appendChild(div);
+      });
+    }
+
+    function addComment() {
+      const input = document.getElementById('commentInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const project = allProjects.find(p => p.id === state.activeProjectId);
+      if (project) {
+        project.comments.push(text);
+        renderComments(project.comments);
+        input.value = '';
+        showToast('Комментарий добавлен');
+      }
+    }
+
+    function showToast(message, isError = false) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      if (isError) toast.style.background = '#d93025';
+      toast.innerHTML = `<span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // Старт
+    init();
+
+  </script>
+</body>
+</html>
